@@ -8,7 +8,12 @@ pygame.display.set_icon(pygame.image.load('img/icon.png'))
 # Block stuff
 GRASS_IMG = pygame.transform.scale(pygame.image.load('img/grass.png').convert(), (80, 80))
 DIRT_IMG = pygame.transform.scale(pygame.image.load('img/dirt.png').convert(), (80, 80))
-blocks = [([280, 560], GRASS_IMG)]
+
+current_level = 0
+levels = [
+    [([0, 560], GRASS_IMG), ([80, 560], GRASS_IMG), ([160, 560], GRASS_IMG), ([240, 560], GRASS_IMG), ([320, 560], GRASS_IMG), ([400, 560], GRASS_IMG), ([480, 560], GRASS_IMG), ([560, 560], GRASS_IMG), ],
+]
+blocks = levels[0]
 
 # Player stuff
 PLAYER_STANDING = pygame.transform.scale(pygame.image.load('img/player_standing.png'), (80, 80))
@@ -23,6 +28,13 @@ time_since_move = 0
 grounded = False
 velocity_g = 0
 
+def change_level(i):
+    global blocks
+    global levels
+    global current_level
+    current_level += i
+    blocks = levels[current_level]
+
 old_time = time()
 while True:
     dt = time() - old_time
@@ -35,20 +47,22 @@ while True:
 
     keys = pygame.key.get_pressed()
 
+    if pygame.mouse.get_pressed()[0]:
+        change_level(1)
+    if pygame.mouse.get_pressed()[2]:
+        change_level(-1)
+
     # Updating moves
     if time_since_move >= TIME_BETWEEN_MOVES:
         time_since_move = 0
-        # was_ever_grounded = False
-        # for block in blocks:
-        #     if pygame.Rect(player_coords[0], player_coords[1], 80, 80).colliderect(pygame.Rect(block[0][0], block[0][1], 80, 80)):
-        #         was_ever_grounded = True
-        # grounded = was_ever_grounded
 
         if keys[pygame.K_d]:
             can_go_right = True
             for block in blocks:
                 if pygame.Rect(player_coords[0] + 10, player_coords[1], 80, 80).colliderect(pygame.Rect(block[0][0], block[0][1], 80, 80)):
                     can_go_right = False
+            if player_coords[0] >= 560:
+                can_go_right = False
             if can_go_right:
                 player_coords[0] += 10
         elif keys[pygame.K_a]:
@@ -56,17 +70,28 @@ while True:
             for block in blocks:
                 if pygame.Rect(player_coords[0] - 10, player_coords[1], 80, 80).colliderect(pygame.Rect(block[0][0], block[0][1], 80, 80)):
                     can_go_left = False
+            if player_coords[0] <= 0:
+                can_go_left = False
             if can_go_left:
                 player_coords[0] -= 10
         if grounded:
             velocity_g = 0
-        else:
+            was_grounded = False
+            for block in blocks:
+                if pygame.Rect(player_coords[0], player_coords[1], 80, 80).colliderect(pygame.Rect(block[0][0], block[0][1], 80, 80)):
+                    player_coords[1] = block[0][1] - 80
+                    was_grounded = True
+
+            if not was_grounded:
+                grounded = False
+            else:
+                grounded = True
+        if not grounded:
             velocity_g += 10
             player_coords[1] += velocity_g
             for block in blocks:
                 if pygame.Rect(player_coords[0], player_coords[1], 80, 80).colliderect(pygame.Rect(block[0][0], block[0][1], 80, 80)):
                     player_coords[1] = block[0][1] - 80
-                    was_grounded = False
                     grounded = True
 
     # Updating sprites
