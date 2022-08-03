@@ -28,20 +28,6 @@ time_since_move = 0
 grounded = False
 velocity_g = 0
 
-def check_for_side(rect1, rect2):
-    dr = abs(rect1.right - rect2.left)
-    dl = abs(rect1.left - rect2.right)
-    db = abs(rect1.bottom - rect2.top)
-    dt = abs(rect1.top - rect2.bottom)
-
-    direction = ""
-
-    if min(dl, dr) < min(dt, db):
-        direction = "left" if dl < dr else "right"
-    else:
-        direction = "bottom" if db < dt else "top"
-    return direction
-
 def change_level(i):
     global blocks
     global levels
