@@ -27,6 +27,15 @@ time_since_sprite_update = 0
 time_since_move = 0
 grounded = False
 velocity_g = 0
+sun_detector = pygame.Rect(player_coords[0], player_coords[1] - 1000, 40, 1000)
+
+def check_if_on_sun():
+    global blocks
+    global sun_detector
+    for block in blocks:
+        if sun_detector.colliderect(pygame.Rect(block[0][0], block[0][1], 80, 80)):
+            return False
+    return True
 
 def change_level(i):
     global blocks
@@ -98,6 +107,8 @@ while True:
                         player_coords[1] = block[0][1] + 80
                         velocity_g = 0
 
+    sun_detector.x = player_coords[0] + 20
+    sun_detector.y = player_coords[1] - 1000
     # Updating sprites
     if time_since_sprite_update > SPRITE_UPDATE:
         time_since_sprite_update = 0
@@ -122,5 +133,7 @@ while True:
     win.blit(current_sprite, player_coords)
     for pos, img in blocks:
         win.blit(img, pos)
+    
+    print(check_if_on_sun(), sun_detector.x, sun_detector.y)
 
     pygame.display.update()
