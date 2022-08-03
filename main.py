@@ -11,7 +11,7 @@ DIRT_IMG = pygame.transform.scale(pygame.image.load('img/dirt.png').convert(), (
 
 current_level = 0
 levels = [
-    [([0, 560], GRASS_IMG), ([80, 560], GRASS_IMG), ([160, 560], GRASS_IMG), ([240, 560], GRASS_IMG), ([320, 560], GRASS_IMG), ([400, 560], GRASS_IMG), ([480, 560], GRASS_IMG), ([560, 560], GRASS_IMG), ],
+    [([0, 560], GRASS_IMG), ([80, 560], GRASS_IMG), ([160, 560], GRASS_IMG), ([240, 560], GRASS_IMG), ([320, 560], GRASS_IMG), ([400, 560], GRASS_IMG), ([480, 560], GRASS_IMG), ([560, 560], DIRT_IMG), ([560, 480], GRASS_IMG), ([400, 320], GRASS_IMG), ],
 ]
 blocks = levels[0]
 
@@ -27,6 +27,20 @@ time_since_sprite_update = 0
 time_since_move = 0
 grounded = False
 velocity_g = 0
+
+def check_for_side(rect1, rect2):
+    dr = abs(rect1.right - rect2.left)
+    dl = abs(rect1.left - rect2.right)
+    db = abs(rect1.bottom - rect2.top)
+    dt = abs(rect1.top - rect2.bottom)
+
+    direction = ""
+
+    if min(dl, dr) < min(dt, db):
+        direction = "left" if dl < dr else "right"
+    else:
+        direction = "bottom" if db < dt else "top"
+    return direction
 
 def change_level(i):
     global blocks
@@ -91,8 +105,12 @@ while True:
             player_coords[1] += velocity_g
             for block in blocks:
                 if pygame.Rect(player_coords[0], player_coords[1], 80, 80).colliderect(pygame.Rect(block[0][0], block[0][1], 80, 80)):
-                    player_coords[1] = block[0][1] - 80
-                    grounded = True
+                    if block[0][1] > player_coords[1]:
+                        player_coords[1] = block[0][1] - 80
+                        grounded = True
+                    elif block[0][1] < player_coords[1]:
+                        player_coords[1] = block[0][1] + 80
+                        velocity_g = 0
 
     # Updating sprites
     if time_since_sprite_update > SPRITE_UPDATE:
