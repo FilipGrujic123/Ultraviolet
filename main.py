@@ -5,7 +5,7 @@ win = pygame.display.set_mode((640, 640))
 pygame.display.set_caption('Ultraviolet')
 pygame.display.set_icon(pygame.image.load('img/icon.png'))
 
-BACKGROUND_IMG = pygame.transform.scale(pygame.image.load('img/background.png'), (640, 640))
+BACKGROUND_IMG = pygame.transform.scale(pygame.image.load('img/background.png').convert(), (640, 640))
 
 # Block stuff
 GRASS_IMG = pygame.transform.scale(pygame.image.load('img/grass.png').convert(), (80, 80))
@@ -13,7 +13,7 @@ DIRT_IMG = pygame.transform.scale(pygame.image.load('img/dirt.png').convert(), (
 
 current_level = 0
 levels = [
-    [([0, 560], GRASS_IMG), ([80, 560], GRASS_IMG), ([160, 560], GRASS_IMG), ([240, 560], GRASS_IMG), ([320, 560], GRASS_IMG), ([400, 560], GRASS_IMG), ([480, 560], GRASS_IMG), ([560, 560], DIRT_IMG), ([560, 480], GRASS_IMG), ([400, 320], GRASS_IMG), ],
+    [([0, 560], GRASS_IMG), ([80, 560], GRASS_IMG), ([160, 560], GRASS_IMG), ([240, 560], GRASS_IMG), ([320, 560], GRASS_IMG), ([400, 560], GRASS_IMG), ([480, 560], GRASS_IMG), ([560, 560], DIRT_IMG), ([560, 480], GRASS_IMG), ([400, 400], GRASS_IMG), ([320, 400], GRASS_IMG), ([240, 400], GRASS_IMG), ([320, 240], GRASS_IMG)],
 ]
 blocks = levels[0]
 
@@ -21,7 +21,7 @@ blocks = levels[0]
 PLAYER_STANDING = pygame.transform.scale(pygame.image.load('img/player_standing.png'), (80, 80))
 PLAYER_RUNNING_1 = pygame.transform.scale(pygame.image.load('img/player_running_1.png'), (80, 80))
 PLAYER_RUNNING_2 = pygame.transform.scale(pygame.image.load('img/player_running_2.png'), (80, 80))
-player_coords = [270, 100]
+player_coords = [240, 480]
 current_sprite = PLAYER_STANDING
 TIME_BETWEEN_MOVES = 1/20
 SPRITE_UPDATE = 1/5
@@ -46,8 +46,9 @@ def change_level(i):
     global blocks
     global levels
     global current_level
-    current_level += i
+    current_level = i
     blocks = levels[current_level]
+    print(current_level)
 
 def die():
     pygame.quit()
@@ -65,10 +66,10 @@ while True:
 
     keys = pygame.key.get_pressed()
 
-    if pygame.mouse.get_pressed()[0]:
-        change_level(1)
-    if pygame.mouse.get_pressed()[2]:
-        change_level(-1)
+    if keys[pygame.K_RIGHT]:
+        change_level(current_level + 1)
+    if keys[pygame.K_LEFT]:
+        change_level(current_level - 1)
 
     # Updating moves
     if time_since_move >= TIME_BETWEEN_MOVES:
@@ -159,6 +160,6 @@ while True:
     pygame.draw.rect(win, (100, 100, 100), pygame.Rect(20, 20, 230, 40))
     pygame.draw.rect(win, (255, 208, 0), pygame.Rect(20, 20, (230 * sun_meter) // 10 * 10, 40))
     
-    print(sun_meter)
+    # print(sun_meter)
 
     pygame.display.update()
