@@ -5,6 +5,8 @@ win = pygame.display.set_mode((640, 640))
 pygame.display.set_caption('Ultraviolet')
 pygame.display.set_icon(pygame.image.load('img/icon.png'))
 
+BACKGROUND_IMG = pygame.transform.scale(pygame.image.load('img/background.png'), (640, 640))
+
 # Block stuff
 GRASS_IMG = pygame.transform.scale(pygame.image.load('img/grass.png').convert(), (80, 80))
 DIRT_IMG = pygame.transform.scale(pygame.image.load('img/dirt.png').convert(), (80, 80))
@@ -28,6 +30,9 @@ time_since_move = 0
 grounded = False
 velocity_g = 0
 sun_detector = pygame.Rect(player_coords[0], player_coords[1] - 1000, 40, 1000)
+sun_meter = 0
+sun_fillup_speed = 1/4
+sun_drain_speed = 1/5
 
 def check_if_on_sun():
     global blocks
@@ -43,6 +48,10 @@ def change_level(i):
     global current_level
     current_level += i
     blocks = levels[current_level]
+
+def die():
+    pygame.quit()
+    quit()
 
 old_time = time()
 while True:
@@ -128,12 +137,28 @@ while True:
     if keys[pygame.K_SPACE] and grounded:
         grounded = False
         velocity_g = -50
+    
+    if check_if_on_sun():
+        sun_meter += dt * sun_fillup_speed
+    else:
+        sun_meter -= dt * sun_drain_speed
+    
+    if max(sun_meter, 0) == 0:
+        sun_meter = 0
+    if min(sun_meter, 1) == 1:
+        sun_meter = 1
+        die()
 
-    win.fill((255, 255, 255))
+    win.blit(BACKGROUND_IMG, (0, 0))
+
     win.blit(current_sprite, player_coords)
     for pos, img in blocks:
         win.blit(img, pos)
     
-    print(check_if_on_sun(), sun_detector.x, sun_detector.y)
+    pygame.draw.rect(win, (0, 0, 0), pygame.Rect(10, 10, 250, 60))
+    pygame.draw.rect(win, (100, 100, 100), pygame.Rect(20, 20, 230, 40))
+    pygame.draw.rect(win, (255, 208, 0), pygame.Rect(20, 20, (230 * sun_meter) // 10 * 10, 40))
+    
+    print(sun_meter)
 
     pygame.display.update()
