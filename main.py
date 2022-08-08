@@ -1,11 +1,21 @@
 import pygame
 from time import time
 
+pygame.init()
+pygame.font.init()
+
 win = pygame.display.set_mode((640, 640))
 pygame.display.set_caption('Ultraviolet')
 pygame.display.set_icon(pygame.image.load('img/icon.png'))
 
 BACKGROUND_IMG = pygame.transform.scale(pygame.image.load('img/background.png').convert(), (640, 640))
+
+# Portals
+PORTAL_ENTER_IMG = pygame.transform.scale(pygame.image.load('img/portal_enter.png'), (80, 80))
+PORTAL_EXIT_IMG = pygame.transform.scale(pygame.image.load('img/portal_exit.png'), (80, 80))
+
+portal_exit = pygame.Rect(0, 480, 80, 80)
+portal_enter = pygame.Rect(80, 160, 80, 80)
 
 # Block stuff
 GRASS_IMG = pygame.transform.scale(pygame.image.load('img/grass.png').convert(), (80, 80))
@@ -13,15 +23,36 @@ DIRT_IMG = pygame.transform.scale(pygame.image.load('img/dirt.png').convert(), (
 
 current_level = 0
 levels = [
-    [([0, 560], GRASS_IMG), ([80, 560], GRASS_IMG), ([160, 560], GRASS_IMG), ([240, 560], GRASS_IMG), ([320, 560], GRASS_IMG), ([400, 560], GRASS_IMG), ([480, 560], GRASS_IMG), ([560, 560], DIRT_IMG), ([560, 480], GRASS_IMG), ([400, 400], GRASS_IMG), ([320, 400], GRASS_IMG), ([240, 400], GRASS_IMG), ([320, 240], GRASS_IMG)],
+    [],
+    [],
+    [([0, 560], GRASS_IMG), ([80, 560], GRASS_IMG), ([160, 560], GRASS_IMG), ([240, 560], GRASS_IMG), ([320, 560], GRASS_IMG), ([400, 560], GRASS_IMG), ([480, 560], GRASS_IMG), ([560, 560], DIRT_IMG), ([560, 480], GRASS_IMG), ([400, 400], GRASS_IMG), ([320, 400], GRASS_IMG), ([240, 400], GRASS_IMG), ([80, 240], GRASS_IMG), ([160, 320], GRASS_IMG)],
+    [],
 ]
+levels_player_positions = [
+    [100000, -100000],
+    [10000, -100000],
+    [0, 480]
+]
+levels_portal_positions = [
+    [(10000, 10000), (20000, 20000)],
+    [(10000, 10000), (20000, 20000)],
+    [(0, 480), (80, 160)]
+]
+levels_text_positions = [
+    [("ULTRAVIOLET", 48, [150, 200]), ("Press E to play", 32, [210, 400])],
+    [("You died!", 48, [180, 200]), ("Press E to play again", 32, [160, 400])],
+    [("Don't be on the sun for too long!", 16, [300, 30])]
+]
+
+current_texts = []
+
 blocks = levels[0]
 
 # Player stuff
 PLAYER_STANDING = pygame.transform.scale(pygame.image.load('img/player_standing.png'), (80, 80))
 PLAYER_RUNNING_1 = pygame.transform.scale(pygame.image.load('img/player_running_1.png'), (80, 80))
 PLAYER_RUNNING_2 = pygame.transform.scale(pygame.image.load('img/player_running_2.png'), (80, 80))
-player_coords = [240, 480]
+player_coords = [0, 480]
 current_sprite = PLAYER_STANDING
 TIME_BETWEEN_MOVES = 1/20
 SPRITE_UPDATE = 1/5
@@ -46,13 +77,28 @@ def change_level(i):
     global blocks
     global levels
     global current_level
+    global levels_player_positions
+    global levels_portal_positions
+    global levels_text_positions
+    global velocity_g, grounded
+    global player_coords
+    global portal_enter, portal_exit
+    global current_texts
+    global sun_meter
     current_level = i
     blocks = levels[current_level]
-    print(current_level)
+    current_texts = levels_text_positions[current_level]
+    velocity_g = 0
+    grounded = True
+    player_coords = levels_player_positions[current_level]
+    portal_exit = levels_portal_positions[current_level][0]
+    portal_enter = levels_portal_positions[current_level][1]
+    sun_meter = 0
+
+change_level(0)
 
 def die():
-    pygame.quit()
-    quit()
+    change_level(1)
 
 old_time = time()
 while True:
@@ -65,6 +111,10 @@ while True:
     [[pygame.quit(), quit()] for event in pygame.event.get() if event.type == pygame.QUIT]
 
     keys = pygame.key.get_pressed()
+
+    # Start and restart the game
+    if keys[pygame.K_e] and current_level in [0, 1]:
+        change_level(2)
 
     if keys[pygame.K_RIGHT]:
         change_level(current_level + 1)
@@ -139,27 +189,43 @@ while True:
         grounded = False
         velocity_g = -50
     
-    if check_if_on_sun():
-        sun_meter += dt * sun_fillup_speed
-    else:
-        sun_meter -= dt * sun_drain_speed
+    if current_level not in [0, 1]:
+        if check_if_on_sun():
+            sun_meter += dt * sun_fillup_speed
+        else:
+            sun_meter -= dt * sun_drain_speed
     
-    if max(sun_meter, 0) == 0:
-        sun_meter = 0
-    if min(sun_meter, 1) == 1:
-        sun_meter = 1
+    if pygame.Rect(player_coords[0], player_coords[1], 80, 80).colliderect(pygame.Rect(portal_enter[0], portal_enter[1], 80, 80)):
+        change_level(current_level + 1)
+    
+    if current_level not in [0, 1]:
+        sun_meter = max(sun_meter, 0)
+        sun_meter = min(sun_meter, 1)
+
+    if sun_meter >= 1:
         die()
 
+    if player_coords[1] > 640:
+        change_level(current_level)
+
     win.blit(BACKGROUND_IMG, (0, 0))
+    
+    win.blit(PORTAL_ENTER_IMG, portal_enter)
+    win.blit(PORTAL_EXIT_IMG, portal_exit)
 
     win.blit(current_sprite, player_coords)
+
     for pos, img in blocks:
         win.blit(img, pos)
-    
-    pygame.draw.rect(win, (0, 0, 0), pygame.Rect(10, 10, 250, 60))
-    pygame.draw.rect(win, (100, 100, 100), pygame.Rect(20, 20, 230, 40))
-    pygame.draw.rect(win, (255, 208, 0), pygame.Rect(20, 20, (230 * sun_meter) // 10 * 10, 40))
-    
-    # print(sun_meter)
+
+    for text_ in current_texts:
+        font = pygame.font.Font('freesansbold.ttf', text_[1])
+        text = font.render(text_[0], True, (255, 208, 0))
+        win.blit(text, text_[2])
+
+    if current_level not in [0, 1]:
+        pygame.draw.rect(win, (0, 0, 0), pygame.Rect(10, 10, 250, 60))
+        pygame.draw.rect(win, (100, 100, 100), pygame.Rect(20, 20, 230, 40))
+        pygame.draw.rect(win, (255, 208, 0), pygame.Rect(20, 20, (230 * sun_meter) // 10 * 10, 40))
 
     pygame.display.update()
